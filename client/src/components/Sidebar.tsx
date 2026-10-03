@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, LayoutDashboard, PanelLeftClose, PanelLeftOpen, UsersRound } from "lucide-react";
+import { LayoutDashboard, PanelLeftClose, PanelLeftOpen, UsersRound } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
 
