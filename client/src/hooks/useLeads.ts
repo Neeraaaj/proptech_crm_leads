@@ -22,7 +22,6 @@ export function useLeadList(params: LeadListParams) {
   });
 }
 
-// ✅ WORKING
 export function useCreateLead() {
   const qc = useQueryClient();
   return useMutation({
@@ -34,7 +33,6 @@ export function useCreateLead() {
   });
 }
 
-// 🚧 Wired, but the API returns 501 until you implement step 2 on the server.
 export function useLead(id: string) {
   return useQuery({
     queryKey: leadKeys.detail(id),
@@ -43,12 +41,10 @@ export function useLead(id: string) {
   });
 }
 
-// 🚧 Step 3
-export function useUpdateStatus(id: string) {
+export function useUpdateLead(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (status: LeadStatus) => leadsApi.updateStatus(id, status),
-    // TODO(step 3, optional): optimistic update via onMutate + rollback in onError
+    mutationFn: (changes: Partial<CreateLeadPayload>) => leadsApi.update(id, changes),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: leadKeys.all });
       qc.invalidateQueries({ queryKey: leadKeys.stats });
@@ -56,7 +52,28 @@ export function useUpdateStatus(id: string) {
   });
 }
 
-// 🚧 Step 3
+export function useUpdateStatus(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (status: LeadStatus) => leadsApi.updateStatus(id, status),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: leadKeys.all });
+      qc.invalidateQueries({ queryKey: leadKeys.stats });
+    },
+  });
+}
+
+export function useDeleteLead(){
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => leadsApi.remove(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: leadKeys.all });
+      qc.invalidateQueries({ queryKey: leadKeys.stats });
+    },
+  })
+}
+
 export function useAddNote(id: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -65,7 +82,6 @@ export function useAddNote(id: string) {
   });
 }
 
-// 🚧 Step 5
 export function useDashboardStats() {
   return useQuery({
     queryKey: leadKeys.stats,

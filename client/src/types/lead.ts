@@ -75,10 +75,19 @@ export interface LeadListParams {
 }
 
 export type CreateLeadPayload = Pick<Lead, "name" | "phone" | "email" | "budget" | "location" | "propertyType" | "source">;
+/** Slim lead shape used by dashboard cards */
+export type LeadCard = Pick<
+  Lead,
+  "id" | "name" | "phone" | "budget" | "location" | "propertyType" | "source" | "status" | "createdAt"
+>;
 
 export interface DashboardStats {
   totalLeads: number;
+  conversionRate: number; // 0..1
+  pipelineValue: number; // sum of budgets of open (not CLOSED) leads
   bySource: { source: LeadSource; count: number }[];
   byStatus: { status: LeadStatus; count: number }[];
-  conversionRate: number;
+  topLead: LeadCard | null;
+  needsAttention: { count: number; leads: LeadCard[] };
+  recentLeads: LeadCard[];
 }

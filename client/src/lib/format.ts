@@ -25,3 +25,10 @@ export function formatDateTime(iso: string): string {
     minute: "2-digit",
   });
 }
+
+/** "today", "1 day ago", "12 days ago" */
+export function daysAgo(iso: string): string {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days <= 0) return "today";
+  return days === 1 ? "1 day ago" : `${days} days ago`;
+}

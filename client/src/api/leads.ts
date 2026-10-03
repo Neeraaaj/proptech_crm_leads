@@ -24,6 +24,9 @@ export const leadsApi = {
     request<One<Lead>>(`/leads/${id}/status`, { method: "PATCH", body: { status } }),
   addNote: (id: string, content: string) =>
     request<One<Note>>(`/leads/${id}/notes`, { method: "POST", body: { content } }),
+  update: (id: string, changes: Partial<CreateLeadPayload>) =>
+    request<One<Lead>>(`/leads/${id}`, { method: "PATCH", body: changes }),
+  remove: (id: string) => request<void>(`/leads/${id}`, { method: "DELETE" }),
 };
 
 export const dashboardApi = {
