@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Building2, LayoutDashboard, PanelLeftClose, PanelLeftOpen, UsersRound } from "lucide-react";
 import { useState } from "react";
+import Image from "next/image";
 
 const sections = [
   {
@@ -20,7 +21,6 @@ export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
-
   return (
     <aside
       className={`flex shrink-0 flex-col bg-[#1d2742] text-slate-300 transition-[width] duration-200 ${
@@ -31,10 +31,11 @@ export function Sidebar() {
       <div className="flex h-14 items-center justify-between px-3">
         {!collapsed && (
           <Link href="/" className="flex items-center gap-2 font-semibold text-white">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-600">
-              <Building2 size={16} />
+            <span className="flex h-7 w-7 items-center justify-center rounded-md text-sm">
+              {/* <Building2 size={16} /> */}
+              <Image src="/logo/uptownLogo.png" alt="Logo" width={23} height={23} />
             </span>
-            Lead CRM
+            <span className="text-[10px]">Uptown Spaces Lead Chain</span>
           </Link>
         )}
         <button
