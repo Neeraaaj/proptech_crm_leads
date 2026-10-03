@@ -1,102 +1,96 @@
-# Build Plan — Lead CRM
+# Lead CRM: Project Plan & Status
 
-**Mental model:** the scaffold is a house with plumbing and wiring already run through every room. The **create + list** room is finished. The other rooms have pipes that end in a capped valve: the endpoint exists and returns `501 NOT_IMPLEMENTED`, and the UI hook is already connected. Each step uncaps one valve. When you implement the service function, the UI behind it starts working.
+A mini CRM for real-estate lead management, built for the Full Stack Developer assignment.
 
-Search the repo for `TODO(step N)` to find each spot.
-
----
-
-## Step 0 — Run it (15 min)
-
-Follow the README setup. Then check:
-
-- [ ] http://localhost:3000/leads shows 15 seeded leads, and sorting by budget/date works
-- [ ] "+ Add lead" with an empty form shows inline errors, and a valid submit adds a row
-- [ ] Clicking a row shows the amber "🚧 Not implemented yet" banner. This is expected.
-
-Before writing any code, read one request end to end: `LeadForm` → `useCreateLead` → `api/leads.ts` → **Next rewrite** (`next.config.ts`) → `lead.routes.ts` → `validate()` → `lead.controller.ts` → `lead.service.ts` → DB. Every later step follows the same path.
-
-## Step 1 — Search + filter (30 min) · `server/.../lead.service.ts → listLeads`
-
-The client already sends `search`, `source`, and `status`, and the server ignores them. Build the `conditions[]` array.
-
-- Search: `or(ilike(name), ilike(phone))`. Think about why the phone was normalized on insert.
-- ✅ Done when typing "pri" narrows the table and ticking Status / Lead Source checkboxes in the filter panel filters it (multi-select arrives as an array → use `inArray`).
-- 🤔 Interview angle: why `ilike` with `%term%` can't use a B-tree index, and what you'd use at scale (`pg_trgm` GIN index).
-
-## Step 2 — Lead detail (30 min) · `getLeadById`
-
-- Use `db.query.leads.findFirst({ with: { notes } })`. The relations are already defined in `schema.ts`.
-- Throw `ApiError.notFound` when nothing comes back.
-- ✅ Done when clicking a row shows the full info card, and a random UUID in the URL gives a 404 message.
-
-## Step 3 — Status update + notes (1–1.5 h) · server + detail page
-
-Server: `updateLeadStatus` and `addNote` (FK violations already map to 404).
-
-Client (`app/leads/[id]/page.tsx`): build `<StatusSelect>` and `<NotesPanel>`. The hooks `useUpdateStatus` and `useAddNote` already exist.
-
-- ✅ Done when changing status updates the badge here *and* in the list (thanks to query invalidation), and a note appears at the top of the list.
-- ⭐ Stretch: an optimistic status update (`onMutate`, rollback in `onError`).
-- 🤔 Decision: should a status change also auto-write a note ("Status: New → Contacted")? That makes an activity timeline cheaply, and reviewers notice that kind of thing.
-
-## Step 4 — Complete CRUD (30 min) · `updateLead`, `deleteLead`
-
-The brief lists "CRUD operations" as a requirement. An edit form can reuse `LeadForm` with `defaultValues`. Add a delete button with a confirm step.
-
-## Step 5 — Dashboard (1–1.5 h) · `dashboard.routes.ts` + `app/page.tsx`
-
-- Server: 3 queries in `Promise.all` (`count()`, `groupBy(source)`, `groupBy(status)`). Postgres does the aggregation.
-- Fill missing groups with 0 so the charts always show every source and status.
-- Client: 4 stat cards + a bar chart (by source) + a donut or bars (by status) with Recharts.
-- ✅ Done when adding a lead or closing one updates the dashboard. `useCreateLead` already invalidates `stats`.
-
-## Step 6 — Polish for submission (1–2 h)
-
-- [ ] Loading skeletons and empty states on every page
-- [ ] Sync filters to the URL (`useSearchParams`) so a filtered view can be shared or bookmarked
-- [ ] Toasts on success and failure
-- [ ] README: add screenshots and a "what I'd do next" section
-- [ ] Remove all `🚧` / `TODO` markers. `grep -rn "TODO\|🚧" server/src client/src` should return nothing.
-
-## Step 6.5 — Next.js-specific upgrades (optional, good interview material)
-
-- **Server Component for the detail page.** Fetch the lead on the server (``fetch(`${process.env.API_ORIGIN}/api/leads/${id}`)``) and pass it as `initialData` to `useLead`, so the first paint already has data. In Next 16, `params` is a Promise in server pages: `const { id } = await params`.
-- **`loading.tsx` / `error.tsx`** per route segment for built-in skeletons and error boundaries.
-- **`generateMetadata`** so the browser tab shows the lead's name.
-- 🤔 Interview angle: why the list page stays client-rendered (filters change on every keystroke) while the detail page benefits from server rendering.
-
-## Step 7 — Bonus (pick 1–2; reviewers notice these)
-
-| Bonus | Why it stands out |
-| --- | --- |
-| API tests with Vitest + Supertest (`app.ts` is already importable) | Proves "proper API structure" |
-| Duplicate-lead warning on phone match | Real CRM pain point |
-| Deploy: Neon/Supabase (DB) + Render/Railway (Express) + Vercel (Next, set `API_ORIGIN`) | A live link is better than "clone and run" |
-| CSV export of the filtered list | Easy to build, very useful |
-| Dockerfile for the API + `docker compose up` runs everything | Setup in one command |
+**Stack:** Next.js 16 (App Router) · Express 5 · TypeScript · PostgreSQL · Drizzle ORM · TanStack Query · Tailwind v4
+**Deployment:** Neon (database) · Render (API) · Vercel (frontend)
 
 ---
 
-## Time budget
+## Assignment requirements: status
 
-| Day | Steps |
-| --- | --- |
-| Day 1 | 0 → 3 (core features working) |
-| Day 2 | 4 → 6 (CRUD, dashboard, polish, README) |
-| Day 3 (optional) | 1 bonus + deploy |
-
-## Brief → where it lives
-
-| Requirement | Location | Status |
+| Requirement | Where it lives | Status |
 | --- | --- | --- |
-| Lead capture + form validation | `LeadForm.tsx`, `lead.schema.ts` | ✅ |
-| Listing table | `app/leads/page.tsx`, `LeadTable.tsx` | ✅ |
-| Sort by date/budget | `listLeads` | ✅ |
-| Search / filter | `listLeads` | Step 1 |
-| Detail view | `getLeadById`, `app/leads/[id]/page.tsx` | Step 2 |
-| Notes + status update | service + detail page | Step 3 |
-| CRUD | `updateLead`, `deleteLead` | Step 4 |
-| Dashboard metrics | `dashboard.routes.ts`, `app/page.tsx` | Step 5 |
+| Lead capture with all fields | `LeadForm.tsx`, `POST /api/leads` | ✅ |
+| Form validation (client + server) | `leadFormSchema.ts`, `lead.schema.ts` | ✅ |
+| Lead listing table | `app/leads/page.tsx`, `LeadTable.tsx` | ✅ |
+| Search by name / phone | `listLeads` (`ILIKE`) | ✅ |
+| Filter by source / status (multi-select) | `FilterPanel.tsx`, `listLeads` (`IN`) | ✅ |
+| Sort by date / budget | Column headers + sort menu | ✅ |
+| Lead detail view | `app/leads/[id]/page.tsx`, `GET /api/leads/:id` | ✅ |
+| Notes / comments | Notes tab, `POST /api/leads/:id/notes` | ✅ |
+| Status update (New → Contacted → Site Visit → Closed) | Status transitions, `PATCH /api/leads/:id/status` | ✅ |
+| Dashboard: total, by source, conversion rate, status distribution | `app/page.tsx`, `GET /api/dashboard/stats` | ✅ |
+| REST API with full CRUD | `server/src/modules/leads/*` | ✅ |
+| Frontend ↔ backend integration | Next.js rewrite `/api/*` → Express | ✅ |
 | Error handling | `errorHandler.ts`, `api/client.ts`, `ErrorState.tsx` | ✅ |
-| README | `README.md` | ✅ (add screenshots at the end) |
+| Clean code structure | routes → validation → controller → service | ✅ |
+| README with setup instructions | `README.md` | 🔲 Final pass (live links + screenshots) |
+
+---
+
+## What's built
+
+### Backend (Express + Drizzle)
+- Layered modules: **routes → `validate()` → controller → service → DB**
+- Zod validation on body, params and query; enums shared with the DB schema
+- One response envelope `{ data, meta }`, and one error format `{ error: { code, message, details } }`
+- Postgres errors mapped to HTTP codes (FK violation → 404, unique → 409, bad input → 400)
+- Phone numbers stored as 10 digits, so search works however the number was typed
+- Dashboard numbers computed in SQL (`COUNT`, `GROUP BY`, `SUM`), with all queries run in parallel
+- Environment variables validated at startup; graceful shutdown
+
+### Frontend (Next.js + TanStack Query)
+- **Leads page:** filter panel (search + multi-select checkboxes), sortable columns, row selection, pagination, "Create Lead" slide-in panel
+- **Lead detail page:** record header (Call / Email / Delete), status transitions, inline edit for each field, notes tab
+- **Dashboard:** headline pipeline value, status pills, top lead, conversion card, "needs attention" list, recent leads, leads by source
+- Query invalidation keeps the list, detail page and dashboard in sync after every change
+- Loading placeholders, empty states, error banners
+
+### Infrastructure
+- Local: Docker Compose Postgres on port **5434**, chosen to avoid clashing with a Postgres installed directly on Windows
+- Migrations: `schema.ts` → `drizzle-kit generate` → `drizzle/*.sql` → `drizzle-kit migrate`
+- Production: Neon (`lead_crm` database) · Render API: https://proptech-crm-leads.onrender.com
+
+---
+
+## Remaining before submission
+
+- [ ] **Vercel deploy** with `API_ORIGIN=https://proptech-crm-leads.onrender.com`, root directory `client`
+- [ ] Set `CORS_ORIGIN` on Render to the Vercel URL
+- [ ] **README:** live demo link at the top, screenshots (dashboard, leads, detail), API table, Windows port note
+- [ ] Code cleanup: remove leftover `TODO` / `🚧` / `STEP` comments
+  ```bash
+  grep -rn "TODO\|🚧\|STEP" server/src client/src
+  ```
+- [ ] Set the defaults to 5434 in `docker-compose.yml` and `server/.env.example`
+- [ ] Remove the unused `recharts` dependency
+- [ ] `npm run typecheck && npm run build` pass
+- [ ] Fresh-clone test: follow the README from scratch in a new folder
+
+---
+
+## Next improvements (post-submission)
+
+| Improvement | Why |
+| --- | --- |
+| "Add lead" on dashboard opens the create panel directly (`/leads?new=1`) | Saves a click |
+| Filters synced to the URL (`useSearchParams`) | Filtered views can be shared and bookmarked |
+| Toasts on save / delete | Clearer feedback |
+| Bulk actions on selected rows (change status, delete) | Uses the existing row selection |
+| Activity timeline: automatic note on status change, written in a DB transaction | Lead history for free |
+| API tests (Vitest + Supertest; `app.ts` is already importable) | Regression safety |
+| Duplicate-lead warning on matching phone number | A common CRM problem |
+| `pg_trgm` GIN index for search | `ILIKE '%term%'` can't use a regular index at scale |
+| Auth + lead owners | Multi-agent teams |
+| Uptime ping on `/api/health` | Avoids Render free-tier cold starts |
+
+---
+
+## Design decisions
+
+- **Express API separate from Next.js:** the brief asks for REST APIs, and keeping the backend independent means it can be deployed and tested on its own.
+- **Drizzle over Prisma:** pure TypeScript, SQL-like queries, no engine binaries to download.
+- **Validation in both places:** Zod on the client gives instant feedback, and Zod on the server is the guarantee. Server field errors are mapped back onto the form.
+- **Counting done in the database:** the dashboard never loads every lead into Node.
+- **Conversion rate** = Closed ÷ total leads. A future version could split Closed into *won* and *lost*.
